@@ -1,0 +1,130 @@
+START Examination_System
+
+// =====================
+// Phase 1: Registration
+// =====================
+DISPLAY "Create New Account"
+
+INPUT name, email, phone, password
+
+IF validateInput(name, email, phone, password) = TRUE THEN
+    SEND verificationCode TO email/phone
+    INPUT enteredCode
+
+    IF enteredCode = verificationCode THEN
+        CREATE studentAccount
+        ACTIVATE account
+        DISPLAY "Account created successfully"
+    ELSE
+        DISPLAY "Invalid verification code"
+        END
+    ENDIF
+ELSE
+    DISPLAY "Invalid registration data"
+    END
+ENDIF
+
+
+// =====================
+// Phase 2: Login
+// =====================
+DISPLAY "Login"
+
+INPUT email, password
+
+IF authenticate(email, password) = TRUE THEN
+    DISPLAY "Login successful"
+    GO TO Dashboard
+ELSE
+    DISPLAY "Login failed"
+    DISPLAY "Forgot Password option"
+    END
+ENDIF
+
+
+// ===============================
+// Phase 3: Browse and Select Exam
+// ===============================
+DISPLAY availableExams
+
+FOR each exam IN availableExams
+    DISPLAY examName, examFee, availableDates, locations
+ENDFOR
+
+INPUT selectedExam
+
+IF selectedExam EXISTS THEN
+    DISPLAY "Proceed to booking"
+ELSE
+    DISPLAY "Invalid exam selection"
+    END
+ENDIF
+
+
+// ==========================
+// Phase 4: Payment & Booking
+// ==========================
+attempt = GET studentAttemptNumber
+
+IF attempt = 1 THEN
+    feeToPay = fullFee
+ELSE IF attempt = 2 THEN
+    feeToPay = fullFee * 0.50
+ELSE IF attempt = 3 THEN
+    feeToPay = fullFee * 0.25
+ELSE
+    WAIT 1 month
+    feeToPay = fullFee
+ENDIF
+
+DISPLAY "Amount to pay =", feeToPay
+
+PROCESS payment
+
+IF paymentSuccess = TRUE THEN
+    INPUT preferredDate, preferredLocation
+    CONFIRM booking
+    SEND bookingConfirmation TO email/phone
+ELSE
+    DISPLAY "Payment failed"
+    END
+ENDIF
+
+
+// ======================
+// Phase 5: Taking Exam
+// ======================
+DISPLAY "Attend exam on scheduled date"
+
+TAKE exam
+
+result = calculateResult()
+
+STORE result
+
+
+// =================================
+// Phase 6: Result & Failure Handling
+// =================================
+IF result = PASS THEN
+    DISPLAY "Congratulations! You passed"
+    GENERATE certificate
+    SEND certificate
+ELSE
+    DISPLAY "You failed"
+
+    attempt = attempt + 1
+    UPDATE studentAttemptNumber
+
+    IF attempt = 2 THEN
+        DISPLAY "Pay 50% fee for retake"
+    ELSE IF attempt = 3 THEN
+        DISPLAY "Pay 25% fee for retake"
+    ELSE
+        DISPLAY "Wait 1 month and pay full fee"
+    ENDIF
+
+    DISPLAY "Book new appointment"
+ENDIF
+
+END Examination_System
