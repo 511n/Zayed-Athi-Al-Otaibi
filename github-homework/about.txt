@@ -1,0 +1,4 @@
+My name is Zayed
+My field is Computer Science.
+My favorite programming language is Python.
+I want to learn Git and GitHub to manage code and projects
